@@ -14,17 +14,23 @@ struct edge{
 vector<vector<double>> adj_mat; // initial adjacency matrix
 vector<vector<double>> adj_mat_copy; // copy of initial matrix for each agent
 vector<vector<int>> matching; //solution
+vector<vector<int>> square_optimal; // copy of matching matrix as square
 vector<edge> dominating; // dominating edges
 vector<int> task_need; // each tasks required agents
 vector<int> task_have; // current number of agents in task coalition
+vector<double> error; // error for each edge
+int free_agents; // number of agents allocated
 int task_count;
 int agent_count;
+int optimal_weight;
 
 
 void print_util_mat(vector<vector<double>>,int,int);
 void print_match_mat(vector<vector<int>>,int,int);
 void generate_system();
 void OTMM();
+void OTMM_iter();
+void intervals();
 
 int main(int argc, char* argv[]){
     task_count = atoi(argv[2]);
@@ -35,10 +41,13 @@ int main(int argc, char* argv[]){
 
     print_util_mat(adj_mat,task_count,agent_count);
 
-    OTMM();
-
+    OTMM_iter();
 
     print_match_mat(matching,task_count,agent_count);
+
+    cout<< "Optimal Weight: " << optimal_weight <<endl;
+
+    intervals();
 
     return 0;
 }
@@ -64,6 +73,7 @@ void print_match_mat(vector<vector<int>> vec, int dem1, int dem2){
 void generate_system(){
     vector<double> temp;
     vector<int> temp_match;
+    int temp_task;
     // init random utilities
     srand(time(NULL));
     for(int i=0;i<task_count;i++){
@@ -76,17 +86,32 @@ void generate_system(){
         // init matching matrix
         matching.push_back(temp_match);
     }
+    // init free agents
+    free_agents = agent_count;
+    // randomly assigns needed agents
+    for(int i=0;i<task_count;i++){
+        task_need.push_back(1);
+    }
+    for(int i=0;i<agent_count-task_count;i++){
+        temp_task = rand()%task_count;
+        task_need[temp_task] = task_need[temp_task]+1;
+    }
+    optimal_weight = 0;
+
     //temporary for testing
+    /*
     task_need.push_back(2);
     task_need.push_back(2);
     task_need.push_back(2);
     task_need.push_back(2);
     task_need.push_back(2);
+    */
     task_have.push_back(0);
     task_have.push_back(0);
     task_have.push_back(0);
     task_have.push_back(0);
     task_have.push_back(0);
+
 }
 
 void OTMM(){
@@ -97,6 +122,12 @@ void OTMM(){
     vector<int> agent_best_matches;
     vector<int> task_best_matches;
     cout<< "*********PHASE1************"<<endl;
+    // display what each task needs
+    cout<< "task needs" <<endl;
+    for(int i=0;i<task_count;i++){
+        cout<< task_need[i] << " ";
+    }
+    cout<<endl;
     // finding best matches for agents
     for(int i=0;i<agent_count;i++){
         for(int j=0;j<task_count;j++){
@@ -148,12 +179,17 @@ void OTMM(){
     cout<<endl;
     // allocating edges
     for(int i=0;i<dominating.size();i++){
-        matching[dominating[i].task][dominating[i].agent] = 1;
-        for(int j=0;j<task_count;j++){
-            adj_mat[j][dominating[i].agent] = -1;
+        if(task_have[dominating[i].task] != task_need[dominating[i].task]){
+            matching[dominating[i].task][dominating[i].agent] = 1;
+            optimal_weight = optimal_weight+adj_mat_copy[dominating[i].task][dominating[i].agent];
+            for(int j=0;j<task_count;j++){
+                adj_mat[j][dominating[i].agent] = -1;
+            }
+            task_have[dominating[i].task]++;
         }
-        task_have[dominating[i].task]++;
     }
+    // adjust allocated value
+    free_agents = free_agents - dominating.size();
     // display initial matching
     cout<< "initial matching"<<endl;
     print_match_mat(matching,task_count,agent_count);
@@ -193,11 +229,14 @@ void OTMM(){
                 dominating.insert(dominating.begin(),temp);
                 matching[temp.task][temp.agent] = 1;
                 task_have[temp.task]++;
+                optimal_weight = optimal_weight+adj_mat_copy[temp.task][temp.agent];
+                // hiding agent
                 for(int j=0;j<task_count;j++){
                     adj_mat[j][temp.agent] = -1;
                 }
             }
         }
+        // checking if task has reached needed agents and hiding if true
         if(task_need[temp.task] == task_have[temp.task]){
             for(int i=0;i<agent_count;i++){
                 adj_mat[temp.task][i] = -1;
@@ -220,6 +259,18 @@ void OTMM(){
         print_match_mat(matching,task_count,agent_count);
         cout<< "current utility matrix" <<endl;
         print_util_mat(adj_mat,task_count,agent_count);
+        // adjust allocated
+        free_agents - free_agents-1;
     }
     cout << "-------------------------"<<endl;
+}
+
+void OTMM_iter(){
+    while(free_agents != 0){
+        OTMM();
+    }
+}
+
+void intervals(){
+    cout<< "***********interval*************" <<endl;
 }
