@@ -13,16 +13,20 @@ struct edge{
 
 vector<vector<double>> adj_mat; // initial adjacency matrix
 vector<vector<double>> adj_mat_copy; // copy of initial matrix for each agent
+vector<vector<double>> square_adj_mat;
 vector<vector<int>> matching; //solution
+vector<vector<int>> matching_copy; // copy of matching
 vector<vector<int>> square_optimal; // copy of matching matrix as square
 vector<edge> dominating; // dominating edges
 vector<int> task_need; // each tasks required agents
 vector<int> task_have; // current number of agents in task coalition
-vector<double> error; // error for each edge
+vector<vector<double>> error; // error for each edge
+vector<vector<double>> optimals;
 int free_agents; // number of agents allocated
 int task_count;
 int agent_count;
-int optimal_weight;
+int optimal_weight; // will contain optimal weight for each run
+int original_weight; // initial optimal matching weight
 
 
 void print_util_mat(vector<vector<double>>,int,int);
@@ -30,7 +34,11 @@ void print_match_mat(vector<vector<int>>,int,int);
 void generate_system();
 void OTMM();
 void OTMM_iter();
+void InitSystem();
+void MakeSquare();
 void intervals();
+void MatchedEdge();
+void UnmatchedEdge();
 
 int main(int argc, char* argv[]){
     task_count = atoi(argv[2]);
@@ -47,7 +55,17 @@ int main(int argc, char* argv[]){
 
     cout<< "Optimal Weight: " << optimal_weight <<endl;
 
+    original_weight = optimal_weight;
+
+    MakeSquare();
+
     intervals();
+
+    cout<< "-------------optimals------------"<<endl;
+    print_util_mat(optimals,agent_count,agent_count);
+
+    cout<< "------------error-----------"<<endl;
+    print_util_mat(error,agent_count,agent_count);
 
     return 0;
 }
@@ -271,6 +289,104 @@ void OTMM_iter(){
     }
 }
 
+void InitSystem(){
+    vector<double> temp;
+    vector<int> temp2;
+    adj_mat = square_adj_mat;
+    adj_mat_copy = square_adj_mat;
+    task_count = agent_count;
+    matching_copy = square_optimal;
+    matching.clear();
+    dominating.clear();
+    task_need.clear();
+    task_have.clear();
+    free_agents = agent_count;
+    optimal_weight = 0;
+    for(int i=0;i<task_count;i++){
+        task_need.push_back(1);
+        task_have.push_back(0);
+    }
+    for(int i=0;i<agent_count;i++){
+        for(int j=0;j<agent_count;j++){
+            temp.push_back(0);
+        }
+        error.push_back(temp);
+        optimals.push_back(temp);
+        temp.clear();
+    }
+    for(int i=0;i<agent_count;i++){
+        for(int j=0;j<agent_count;j++){
+            temp2.push_back(0);
+        }
+        matching.push_back(temp2);
+        temp2.clear();
+    }
+}
+
 void intervals(){
     cout<< "***********interval*************" <<endl;
+    for(int i=0;i<agent_count;i<i++){
+        for(int j=0;j<agent_count;j++){
+            InitSystem();
+            if(matching_copy[i][j] == 1){
+                adj_mat[i][j] = -1;
+            }
+            else{
+                for(int k=0;k<agent_count;k++){
+                    adj_mat[i][k] = -1;
+                    adj_mat[k][j] = -1;
+                    matching[i][j] = 1;
+                    task_have[i] = 1;
+                }
+            }
+            cout<< "-----------current utils----------"<<endl;
+            print_util_mat(adj_mat,agent_count,agent_count);
+
+            OTMM_iter();
+            optimals[i][j] = optimal_weight;
+            error[i][j] = original_weight - optimal_weight;
+        }
+    }
+}
+
+void MakeSquare(){
+    vector<int> temp;
+    vector<int> index;
+    int counter = 0;
+    for(int i=0;i<agent_count;i++){
+        for(int j=0;j<agent_count;j++){
+            temp.push_back(0);
+        }
+        square_optimal.push_back(temp);
+        temp.clear();
+    }
+    for(int i=0;i<task_count;i++){
+        for(int j=0;j<agent_count;j++){
+            if(matching[i][j] == 1){
+                index.push_back(j);
+            }
+        }
+    }
+    for(int i=0;i<agent_count;i++){
+        square_optimal[i][index[i]] = 1;
+    }
+    index.clear();
+    for(int i=0;i<task_count;i++){
+        for(int j=0;j<agent_count;j++){
+            if(matching[i][j] == 1){
+                counter = counter+1;
+            }
+        }
+        index[i] = counter;
+        counter = 0;
+    }
+    for(int i=0;i<task_count;i++){
+        for(int j=0;j<index[i];j++){
+            square_adj_mat.push_back(adj_mat_copy[i]);
+        }
+    }
+    cout << "**********Square System*************" <<endl;
+    print_match_mat(square_optimal,agent_count,agent_count);
+    cout<<endl;
+    print_util_mat(square_adj_mat,agent_count,agent_count);
 }
