@@ -130,14 +130,14 @@ void OTMM(){
     int best_for_T = 0;
     vector<int> agent_best_matches;
     vector<int> task_best_matches;
-    cout<< "*********PHASE1************"<<endl;
+/*    cout<< "*********PHASE1************"<<endl;
     // display what each task needs
     cout<< "task needs" <<endl;
     for(int i=0;i<task_count;i++){
         cout<< task_need[i] << " ";
     }
     cout<<endl;
-    // finding best matches for agents
+*/   // finding best matches for agents
     for(int i=0;i<agent_count;i++){
         for(int j=0;j<task_count;j++){
             if(adj_mat[j][i] > best_value){
@@ -160,7 +160,7 @@ void OTMM(){
         best_value = 0;
     }
     // displaying best matches
-    cout<<"best matches for agents"<<endl;
+/*    cout<<"best matches for agents"<<endl;
     for(int i=0;i<agent_count;i++){
         cout<< agent_best_matches[i] << " ";
     }
@@ -170,7 +170,7 @@ void OTMM(){
         cout<< task_best_matches[i] << " ";
     }
     cout<<endl;
-    // finding dominating edges
+*/    // finding dominating edges
     for(int i=0;i<task_count;i++){
         for(int j=0;j<agent_count;j++){
             if(task_best_matches[i] == j && agent_best_matches[j] == i){
@@ -181,12 +181,12 @@ void OTMM(){
         }
     }
     // displaying initial dominating edges
-    cout<< "initial dominating edges" <<endl;
+/*    cout<< "initial dominating edges" <<endl;
     for(int i=0;i<dominating.size();i++){
         cout << "(" << dominating[i].agent << "," << dominating[i].task << ")" << " ";
     }
     cout<<endl;
-    // allocating edges
+*/    // allocating edges
     for(int i=0;i<dominating.size();i++){
         if(task_have[dominating[i].task] != task_need[dominating[i].task]){
             matching[dominating[i].task][dominating[i].agent] = 1;
@@ -198,14 +198,14 @@ void OTMM(){
         }
     }
     // display initial matching
-    cout<< "initial matching"<<endl;
+/*    cout<< "initial matching"<<endl;
     print_match_mat(matching,task_count,agent_count);
     // display utilities
     cout<< "current utility matrix" <<endl;
     print_util_mat(adj_mat,task_count,agent_count);
     cout<< "*********PHASE2************"<<endl;
-    while(dominating.size() != 0){
-    cout << "-------------------------"<<endl;
+*/    while(dominating.size() != 0){
+//    cout << "-------------------------"<<endl;
         temp = dominating[dominating.size()-1];
         dominating.pop_back();
         // finding best agent for task
@@ -250,7 +250,7 @@ void OTMM(){
             }
         }
         //displaying info
-        cout<< "task best match" <<endl;
+/*        cout<< "task best match" <<endl;
         cout<< best_for_T <<endl;
         cout<< "agent best matches"<<endl;
         for(int i=0;i<agent_count;i++){
@@ -266,15 +266,15 @@ void OTMM(){
         print_match_mat(matching,task_count,agent_count);
         cout<< "current utility matrix" <<endl;
         print_util_mat(adj_mat,task_count,agent_count);
-        // adjust allocated
+*/        // adjust allocated
         free_agents = free_agents-1;
     }
-    cout << "-------------------------"<<endl;
+//    cout << "-------------------------"<<endl;
 }
 
 void OTMM_iter(){
-    while(free_agents >= 0){
-        cout << "free agents: " << free_agents <<endl;
+    while(free_agents > 0){
+//        cout << "free agents: " << free_agents <<endl;
         OTMM();
     }
 }
@@ -314,7 +314,7 @@ void InitSystem(){
 }
 
 void intervals(){
-    cout<< "***********interval*************" <<endl;
+//    cout<< "***********interval*************" <<endl;
     for(int i=0;i<agent_count;i<i++){
         for(int j=0;j<agent_count;j++){
             InitSystem();
@@ -329,8 +329,8 @@ void intervals(){
                     task_have[i] = 1;
                 }
             }
-            cout<< "-----------current utils----------"<<endl;
-            print_util_mat(adj_mat,agent_count,agent_count);
+//            cout<< "-----------current utils----------"<<endl;
+//            print_util_mat(adj_mat,agent_count,agent_count);
 
             OTMM_iter();
             optimals[i][j] = optimal_weight;
@@ -375,8 +375,8 @@ void MakeSquare(){
             square_adj_mat.push_back(adj_mat_copy[i]);
         }
     }
-    cout << "**********Square System*************" <<endl;
-    print_match_mat(square_optimal,agent_count,agent_count);
-    cout<<endl;
-    print_util_mat(square_adj_mat,agent_count,agent_count);
+//    cout << "**********Square System*************" <<endl;
+//    print_match_mat(square_optimal,agent_count,agent_count);
+//    cout<<endl;
+//    print_util_mat(square_adj_mat,agent_count,agent_count);
 }
