@@ -116,19 +116,10 @@ void generate_system(){
     }
     optimal_weight = 0;
 
-    //temporary for testing
-    /*
-    task_need.push_back(2);
-    task_need.push_back(2);
-    task_need.push_back(2);
-    task_need.push_back(2);
-    task_need.push_back(2);
-    */
-    task_have.push_back(0);
-    task_have.push_back(0);
-    task_have.push_back(0);
-    task_have.push_back(0);
-    task_have.push_back(0);
+    for(int i=0;i<task_count;i++){
+        task_have.push_back(0);
+    }
+
 
 }
 
@@ -206,8 +197,6 @@ void OTMM(){
             task_have[dominating[i].task]++;
         }
     }
-    // adjust allocated value
-    free_agents = free_agents - dominating.size();
     // display initial matching
     cout<< "initial matching"<<endl;
     print_match_mat(matching,task_count,agent_count);
@@ -278,13 +267,14 @@ void OTMM(){
         cout<< "current utility matrix" <<endl;
         print_util_mat(adj_mat,task_count,agent_count);
         // adjust allocated
-        free_agents - free_agents-1;
+        free_agents = free_agents-1;
     }
     cout << "-------------------------"<<endl;
 }
 
 void OTMM_iter(){
-    while(free_agents != 0){
+    while(free_agents >= 0){
+        cout << "free agents: " << free_agents <<endl;
         OTMM();
     }
 }
