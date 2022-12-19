@@ -21,6 +21,7 @@ vector<vector<int>> discovered_matching;
 vector<edge> dominating; // dominating edges
 vector<int> task_need; // each tasks required agents
 vector<int> task_have; // current number of agents in task coalition
+vector<int> task_cols;
 vector<vector<double>> error; // error for each edge
 vector<vector<double>> optimals;
 int free_agents; // number of agents allocated
@@ -192,8 +193,8 @@ void OTMM(){
             }
         }
     }
-    // displaying initial dominating edges
-/*    cout<< "initial dominating edges" <<endl;
+/*    // displaying initial dominating edges
+    cout<< "initial dominating edges" <<endl;
     for(int i=0;i<dominating.size();i++){
         cout << "(" << dominating[i].agent << "," << dominating[i].task << ")" << " ";
     }
@@ -332,7 +333,11 @@ void intervals(){
         for(int j=0;j<agent_count;j++){
             InitSystem();
             if(matching_copy[i][j] == 1){
-                adj_mat[i][j] = -1;
+                for(int k=0;k<agent_count;k++){
+                    if(task_cols[k] == i){
+                        adj_mat[k][i] = -1;
+                    }
+                }
             }
             else{
                 for(int k=0;k<agent_count;k++){
@@ -360,6 +365,12 @@ void MakeSquare(){
     vector<int> temp;
     vector<int> index;
     int counter = 0;
+    for(int i=0;i<task_count;i++){
+        for(int j=0;j<task_need[i];j++){
+            task_cols.push_back(i);
+        }
+    }
+
     for(int i=0;i<agent_count;i++){
         for(int j=0;j<agent_count;j++){
             temp.push_back(0);
