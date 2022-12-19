@@ -17,6 +17,7 @@ vector<vector<double>> square_adj_mat;
 vector<vector<int>> matching; //solution
 vector<vector<int>> matching_copy; // copy of matching
 vector<vector<int>> square_optimal; // copy of matching matrix as square
+vector<vector<int>> discovered_matching;
 vector<edge> dominating; // dominating edges
 vector<int> task_need; // each tasks required agents
 vector<int> task_have; // current number of agents in task coalition
@@ -27,6 +28,7 @@ int task_count;
 int agent_count;
 int optimal_weight; // will contain optimal weight for each run
 int original_weight; // initial optimal matching weight
+int discovered_weight;
 
 
 void print_util_mat(vector<vector<double>>,int,int);
@@ -39,6 +41,7 @@ void MakeSquare();
 void intervals();
 void MatchedEdge();
 void UnmatchedEdge();
+void PrintIntervals();
 
 int main(int argc, char* argv[]){
     task_count = atoi(argv[2]);
@@ -66,6 +69,15 @@ int main(int argc, char* argv[]){
 
     cout<< "------------error-----------"<<endl;
     print_util_mat(error,agent_count,agent_count);
+
+    if(discovered_weight > original_weight){
+        cout<< "-------------------------------" <<endl;
+        cout<< "Higher weighted matching found" <<endl;
+        print_match_mat(discovered_matching,agent_count,agent_count);
+        cout<< "Weight: " << discovered_weight <<endl;
+    }
+
+    PrintIntervals();
 
     return 0;
 }
@@ -315,6 +327,7 @@ void InitSystem(){
 
 void intervals(){
 //    cout<< "***********interval*************" <<endl;
+    discovered_weight = original_weight;
     for(int i=0;i<agent_count;i<i++){
         for(int j=0;j<agent_count;j++){
             InitSystem();
@@ -335,6 +348,10 @@ void intervals(){
             OTMM_iter();
             optimals[i][j] = optimal_weight;
             error[i][j] = original_weight - optimal_weight;
+            if(optimal_weight > discovered_weight){
+                discovered_weight = optimal_weight;
+                discovered_matching = matching;
+            }
         }
     }
 }
@@ -379,4 +396,19 @@ void MakeSquare(){
 //    print_match_mat(square_optimal,agent_count,agent_count);
 //    cout<<endl;
 //    print_util_mat(square_adj_mat,agent_count,agent_count);
+}
+
+void PrintIntervals(){
+    cout<< "--------------Intervals---------------" <<endl;
+    for(int i=0;i<agent_count;i++){
+        for(int j=0;j<agent_count;j++){
+            if(square_optimal[i][j] == 1){
+                cout<< "[" << square_adj_mat[i][j] - error[i][j] << ",oo)" << "  ";
+            }
+            else{
+                cout<< "(-oo," << square_adj_mat[i][j] + error[i][j] << "]" << "  ";
+            }
+        }
+        cout<<endl;
+    }
 }
