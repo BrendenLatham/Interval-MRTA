@@ -11,38 +11,39 @@ struct edge{
     int agent;
 };
 
-vector<vector<double>> adj_mat; // initial adjacency matrix
-vector<vector<double>> adj_mat_copy; // copy of initial matrix for each agent
-vector<vector<double>> square_adj_mat;
-vector<vector<int>> matching; //solution
-vector<vector<int>> matching_copy; // copy of matching
-vector<vector<int>> square_optimal; // copy of matching matrix as square
-vector<vector<int>> discovered_matching;
+vector<vector<double>> adj_mat; // dynamic weight matrix used in OTMM
+vector<vector<double>> static_adj_mat; //static initial weight for solution processing
+vector<vector<double>> adj_mat_copy; // static square weight matrix to recall before each interval computation
+vector<vector<double>> square_adj_mat; // dynamic square weight matrix to do work on
+vector<vector<int>> matching; // dynamic matching matrix used it OTMM
+vector<vector<int>> matching_copy; // static square matching matrix to recall for interval computation
+vector<vector<int>> static_matching; // static original matching matrix for solution processing
+vector<vector<int>> square_optimal; // dynamic copy of matching matrix as square
+vector<vector<int>> discovered_matching; // if more optimal solution is discovered it is stored here
 vector<edge> dominating; // dominating edges
 vector<int> task_need; // each tasks required agents
+vector<int> task_need_copy; // copy of task_needs to hold original tasks required agents after task_needs is initialized to be used in interval function
 vector<int> task_have; // current number of agents in task coalition
-vector<int> task_cols;
+vector<int> task_cols; // vector holding each subtasks parent task
 vector<vector<double>> error; // error for each edge
-vector<vector<double>> optimals;
-int free_agents; // number of agents allocated
-int task_count;
-int agent_count;
-int optimal_weight; // will contain optimal weight for each run
-int original_weight; // initial optimal matching weight
-int discovered_weight;
+vector<vector<double>> optimals; // optimal calculated for each edge when determining intervals
+int free_agents; // number of agents not yet allocated
+int task_count; // number of tasks. this changes when tasks are split into subtasks
+int agent_count; // number of agents. this stays constant
+int optimal_weight; // will contain optimal weight for initial solution, then all interval solutions
+int original_weight; // initial optimal matching weight copied from optimal_weight after initial solution is found
+int discovered_weight; // if more optimal solution is discovered its weight is stored here
 
 
-void print_util_mat(vector<vector<double>>,int,int);
-void print_match_mat(vector<vector<int>>,int,int);
-void generate_system();
-void OTMM();
-void OTMM_iter();
-void InitSystem();
-void MakeSquare();
-void intervals();
-void MatchedEdge();
-void UnmatchedEdge();
-void PrintIntervals();
+void print_util_mat(vector<vector<double>>,int,int); // easily prints matrix of doubles
+void print_match_mat(vector<vector<int>>,int,int); // easily prints matrix of integers
+void generate_system(); // generated random system for the problem
+void OTMM(); // runs algorithms one time
+void OTMM_iter(); // runs algorithms until all tasks meet required agents
+void InitSystem(); // initializes system to pre-interval calculation state for one interval calculation
+void MakeSquare(); // square system transformation
+void intervals(); // calculates intervals
+void PrintIntervals(); // reverses MakeSquare and prints results
 
 int main(int argc, char* argv[]){
     task_count = atoi(argv[2]);
@@ -50,10 +51,13 @@ int main(int argc, char* argv[]){
 
     generate_system();
     adj_mat_copy = adj_mat;
+    static_adj_mat = adj_mat;
 
     print_util_mat(adj_mat,task_count,agent_count);
 
     OTMM_iter();
+
+    static_matching = matching;
 
     print_match_mat(matching,task_count,agent_count);
 
@@ -79,6 +83,8 @@ int main(int argc, char* argv[]){
     }
 
     PrintIntervals();
+
+
 
     return 0;
 }
@@ -362,6 +368,7 @@ void intervals(){
 }
 
 void MakeSquare(){
+    task_need_copy = task_need;
     vector<int> temp;
     vector<int> index;
     int counter = 0;
@@ -410,16 +417,51 @@ void MakeSquare(){
 }
 
 void PrintIntervals(){
-    cout<< "--------------Intervals---------------" <<endl;
+    vector<vector<double>> error_collapsed;
+    vector<double> matched_errors;
+    vector<double> temp;
+
+    for(int i=1;i<task_need_copy.size();i++){
+        task_need_copy[i] = task_need_copy[i]+task_need_copy[i-1];
+    }
+    for(int i=0;i<task_need_copy.size();i++){
+        task_need_copy[i] = task_need_copy[i]-1;
+    }
+    for(int i=0;i<task_need_copy.size();i++){
+        error_collapsed.push_back(error[task_need_copy[i]]);
+    }
     for(int i=0;i<agent_count;i++){
         for(int j=0;j<agent_count;j++){
-            if(square_optimal[i][j] == 1){
-                cout<< "[" << square_adj_mat[i][j] - error[i][j] << ",oo)" << "  ";
+            if(matching_copy[i][j] == 1){
+                matched_errors.push_back(error[i][j]);
+            }
+        }
+    }
+
+    for(int i=0;i<error_collapsed.size();i++){
+        for(int j=0;j<agent_count;j++){
+            if(static_matching[i][j] == 1){
+                error_collapsed[i][j] = matched_errors[0];
+                for(int k=1;k<matched_errors.size();k++){
+                    temp.push_back(matched_errors[k]);
+                }
+                matched_errors = temp;
+                temp.clear();
+            }
+        }
+    }
+
+    cout<<"------Intervals-------"<<endl;
+    for(int i=0;i<error_collapsed.size();i++){
+        for(int j=0;j<agent_count;j++){
+            if(static_matching[i][j] == 1){
+                cout << "[" << static_adj_mat[i][j] - error_collapsed[i][j] << ",oo)" << "  ";
             }
             else{
-                cout<< "(-oo," << square_adj_mat[i][j] + error[i][j] << "]" << "  ";
+                cout << "(-oo," << static_adj_mat[i][j] + error_collapsed[i][j] << "]" << "  ";
             }
         }
         cout<<endl;
     }
+
 }
