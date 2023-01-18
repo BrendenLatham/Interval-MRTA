@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <random>
+#include <chrono>
 
 using namespace std;
 
@@ -55,7 +56,11 @@ int main(int argc, char* argv[]){
 
     print_util_mat(adj_mat,task_count,agent_count);
 
+    auto start1 = std::chrono::high_resolution_clock::now();
+
     OTMM_iter();
+
+    auto finish1 = std::chrono::high_resolution_clock::now();
 
     static_matching = matching;
 
@@ -65,9 +70,13 @@ int main(int argc, char* argv[]){
 
     original_weight = optimal_weight;
 
+    auto start2 = std::chrono::high_resolution_clock::now();
+
     MakeSquare();
 
     intervals();
+
+    auto finish2 = std::chrono::high_resolution_clock::now();
 
     cout<< "-------------optimals------------"<<endl;
     print_util_mat(optimals,agent_count,agent_count);
@@ -83,6 +92,14 @@ int main(int argc, char* argv[]){
     }
 
     PrintIntervals();
+
+    std::chrono::duration<double> elapsed1 = finish1 - start1;
+    std::chrono::duration<double> elapsed2 = finish2 - start2;
+
+    cout<< "-------------time--------------" <<endl;
+    cout<< "Allocation Time: " << elapsed1.count() <<endl;
+    cout<< "Interval Time: " << elapsed2.count() <<endl;
+    cout<< "Total Time: " << elapsed1.count() + elapsed2.count() <<endl;
 
 
 
@@ -463,5 +480,10 @@ void PrintIntervals(){
         }
         cout<<endl;
     }
+
+}
+
+void BruteForce(){
+
 
 }
