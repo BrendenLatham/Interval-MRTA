@@ -475,7 +475,7 @@ void PrintIntervals(){
                 cout << "[" << static_adj_mat[i][j] - error_collapsed[i][j] << ",oo)" << "  ";
             }
             else{
-                cout << "(-oo," << static_adj_mat[i][j] + error_collapsed[i][j] << "]" << "  ";
+                cout << "(-oo," << error_collapsed[i][j] << "]" << "  ";
             }
         }
         cout<<endl;
