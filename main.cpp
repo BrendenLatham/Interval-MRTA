@@ -357,8 +357,8 @@ void intervals(){
             InitSystem();
             if(matching_copy[i][j] == 1){
                 for(int k=0;k<agent_count;k++){
-                    if(task_cols[k] == i){
-                        adj_mat[k][i] = -1;
+                    if(task_cols[k] == task_cols[i]){
+                        adj_mat[k][j] = -1;
                     }
                 }
             }
