@@ -4,6 +4,8 @@
 #include <ctime>
 #include <random>
 #include <chrono>
+#include<sys/types.h>
+#include<unistd.h>
 
 using namespace std;
 
@@ -28,12 +30,15 @@ vector<int> task_have; // current number of agents in task coalition
 vector<int> task_cols; // vector holding each subtasks parent task
 vector<vector<double>> error; // error for each edge
 vector<vector<double>> optimals; // optimal calculated for each edge when determining intervals
+vector<vector<double>> interval_mat;
 int free_agents; // number of agents not yet allocated
 int task_count; // number of tasks. this changes when tasks are split into subtasks
 int agent_count; // number of agents. this stays constant
 int optimal_weight; // will contain optimal weight for initial solution, then all interval solutions
 int original_weight; // initial optimal matching weight copied from optimal_weight after initial solution is found
 int discovered_weight; // if more optimal solution is discovered its weight is stored here
+double percent_error = .1;
+double algorithm_error = .2;
 
 
 void print_util_mat(vector<vector<double>>,int,int); // easily prints matrix of doubles
@@ -45,6 +50,7 @@ void InitSystem(); // initializes system to pre-interval calculation state for o
 void MakeSquare(); // square system transformation
 void intervals(); // calculates intervals
 void PrintIntervals(); // reverses MakeSquare and prints results
+void FindAreas();
 
 int main(int argc, char* argv[]){
     task_count = atoi(argv[2]);
@@ -54,7 +60,7 @@ int main(int argc, char* argv[]){
     static_square_weight_mat = dynamic_weight_mat;
     static_weight_mat = dynamic_weight_mat;
 
-    print_util_mat(dynamic_weight_mat,task_count,agent_count);
+////    print_util_mat(dynamic_weight_mat,task_count,agent_count);
 
     auto start1 = std::chrono::high_resolution_clock::now();
 
@@ -64,9 +70,9 @@ int main(int argc, char* argv[]){
 
     static_matching = dynamic_matching;
 
-    print_match_mat(dynamic_matching,task_count,agent_count);
+////    print_match_mat(dynamic_matching,task_count,agent_count);
 
-    cout<< "Optimal Weight: " << optimal_weight <<endl;
+////    cout<< "Optimal Weight: " << optimal_weight <<endl;
 
     original_weight = optimal_weight;
 
@@ -78,29 +84,34 @@ int main(int argc, char* argv[]){
 
     auto finish2 = std::chrono::high_resolution_clock::now();
 
-    cout<< "-------------optimals------------"<<endl;
-    print_util_mat(optimals,agent_count,agent_count);
+////    cout<< "-------------optimals------------"<<endl;
+////    print_util_mat(optimals,agent_count,agent_count);
 
-    cout<< "------------error-----------"<<endl;
-    print_util_mat(error,agent_count,agent_count);
+////    cout<< "------------error-----------"<<endl;
+ ////   print_util_mat(error,agent_count,agent_count);
 
     if(discovered_weight > original_weight){
-        cout<< "-------------------------------" <<endl;
-        cout<< "Higher weighted matching found" <<endl;
-        print_match_mat(discovered_matching,agent_count,agent_count);
-        cout<< "Weight: " << discovered_weight <<endl;
+ ////       cout<< "-------------------------------" <<endl;
+ ////       cout<< "Higher weighted matching found" <<endl;
+ ////       print_match_mat(discovered_matching,agent_count,agent_count);
+ ////       cout<< "Weight: " << discovered_weight <<endl;
     }
 
     PrintIntervals();
 
+ ////   cout<<endl;
+ ////   cout<< "----------------Range Checks-------------"<<endl;
+    FindAreas();
+
+
+
     std::chrono::duration<double> elapsed1 = finish1 - start1;
     std::chrono::duration<double> elapsed2 = finish2 - start2;
 
-    cout<< "-------------time--------------" <<endl;
-    cout<< "Allocation Time: " << elapsed1.count() <<endl;
-    cout<< "Interval Time: " << elapsed2.count() <<endl;
-    cout<< "Total Time: " << elapsed1.count() + elapsed2.count() <<endl;
-
+ ////   cout<< "-------------time--------------" <<endl;
+ ////   cout<< "Allocation Time: " << elapsed1.count() <<endl;
+ ////   cout<< "Interval Time: " << elapsed2.count() <<endl;
+ ////   cout<< "Total Time: " << elapsed1.count() + elapsed2.count() <<endl;
 
 
     return 0;
@@ -128,11 +139,12 @@ void generate_system(){
     vector<double> temp;
     vector<int> temp_match;
     int temp_task;
+    pid_t pid = getpid();
     // init random utilities
-    srand(time(NULL));
+    srand(pid);
     for(int i=0;i<task_count;i++){
         for(int j=0;j<agent_count;j++){
-            temp.push_back(rand()%100);
+            temp.push_back((rand()%100)+1);
             temp_match.push_back(0);
         }
         dynamic_weight_mat.push_back(temp);
@@ -230,7 +242,7 @@ void OTMM(){
             for(int j=0;j<task_count;j++){
                 dynamic_weight_mat[j][dominating[i].agent] = -1;
             }
-            task_have[dominating[i].task]++;
+            task_have[dominating[i].task] = task_have[dominating[i].task] + 1 ;
         }
     }
     // display initial dynamic_matching
@@ -306,6 +318,7 @@ void OTMM(){
         free_agents = free_agents-1;
     }
 //    cout << "-------------------------"<<endl;
+
 }
 
 void OTMM_iter(){
@@ -352,7 +365,7 @@ void InitSystem(){
 void intervals(){
 //    cout<< "***********interval*************" <<endl;
     discovered_weight = original_weight;
-    for(int i=0;i<agent_count;i<i++){
+    for(int i=0;i<agent_count;i++){
         for(int j=0;j<agent_count;j++){
             InitSystem();
             if(static_square_matching[i][j] == 1){
@@ -467,18 +480,97 @@ void PrintIntervals(){
             }
         }
     }
-
-    cout<<"------Intervals-------"<<endl;
+    vector<double> interval_temp;
+////    cout<<"------Intervals-------"<<endl;
     for(int i=0;i<error_collapsed.size();i++){
         for(int j=0;j<agent_count;j++){
             if(static_matching[i][j] == 1){
-                cout << "[" << static_weight_mat[i][j] - error_collapsed[i][j] << ",oo)" << "  ";
+////                cout << "[" << static_weight_mat[i][j] - error_collapsed[i][j] << ",oo)" << "  ";
+                interval_temp.push_back(static_weight_mat[i][j] - error_collapsed[i][j]);
             }
             else{
-                cout << "(-oo," << error_collapsed[i][j] << "]" << "  ";
+////                cout << "(-oo," << error_collapsed[i][j] << "]" << "  ";
+                interval_temp.push_back(error_collapsed[i][j]);
             }
         }
-        cout<<endl;
+        interval_mat.push_back(interval_temp);
+        interval_temp.clear();
+////        cout<<endl;
     }
-
 }
+
+void FindAreas(){
+    edge current_edge;
+    vector<edge> area_breaks;
+    vector<double> area_overlap;
+    if(original_weight != discovered_weight){
+        algorithm_error = discovered_weight - original_weight;
+        algorithm_error = algorithm_error/original_weight;
+    }
+////    cout << "assumed algorithm error is " << 100*algorithm_error << "%" <<endl;
+    for(int i=0;i<interval_mat.size();i++){
+        for(int j=0;j<interval_mat[0].size();j++){
+            current_edge.agent = j;
+            current_edge.task = i;
+            if(static_matching[i][j] == 1){
+                if( (static_weight_mat[i][j] - (percent_error*static_weight_mat[i][j])) < (interval_mat[i][j] + (interval_mat[i][j]*algorithm_error)) ){
+                    area_breaks.push_back(current_edge);
+                }
+            }
+            else{
+                if( ((percent_error*static_weight_mat[i][j]) + static_weight_mat[i][j]) > (interval_mat[i][j] - (interval_mat[i][j]*algorithm_error)) ){
+                    area_breaks.push_back(current_edge);
+                }
+            }
+        }
+    }
+    double max_weight;
+    double min_weight;
+    double min_interval;
+    double weight_area;
+    double overlaping_area;
+    double average_overlap;
+    if(area_breaks.size() == 0){
+////        cout<< "All edges are withing range" <<endl;
+////        cout<< "average area overlap is 100%" <<endl;
+        cout<<100<<endl;
+    }
+    else{
+        for(int i=0;i<area_breaks.size();i++){
+            if(static_matching[area_breaks[i].task][area_breaks[i].agent] == 1){
+                max_weight = static_weight_mat[area_breaks[i].task][area_breaks[i].agent] + (percent_error*static_weight_mat[area_breaks[i].task][area_breaks[i].agent]);
+                min_interval = interval_mat[area_breaks[i].task][area_breaks[i].agent] + (algorithm_error*interval_mat[area_breaks[i].task][area_breaks[i].agent]);
+                if(max_weight < min_interval){
+                    area_overlap.push_back(0);
+                }
+                else{
+                    weight_area = 2*percent_error*static_weight_mat[area_breaks[i].task][area_breaks[i].agent];
+                    overlaping_area = max_weight - min_interval;
+                    area_overlap.push_back(overlaping_area/weight_area);
+                }
+            }
+            else{
+                min_weight = static_weight_mat[area_breaks[i].task][area_breaks[i].agent] - (percent_error*static_weight_mat[area_breaks[i].task][area_breaks[i].agent]);
+                min_interval = interval_mat[area_breaks[i].task][area_breaks[i].agent] - (algorithm_error*interval_mat[area_breaks[i].task][area_breaks[i].agent]);
+                if( min_weight > min_interval){
+                    area_overlap.push_back(0);
+                }
+                else{
+                    weight_area = 2*percent_error*static_weight_mat[area_breaks[i].task][area_breaks[i].agent];
+                    overlaping_area = min_interval - min_weight;
+                    area_overlap.push_back(overlaping_area/weight_area);
+                }
+            }
+        }
+        for(int i=0;i<area_breaks.size();i++){
+////            cout << "agent " << area_breaks[i].agent << " and task " << area_breaks[i].task << " have range overlap by " << 100*area_overlap[i] << "%" <<endl;
+            average_overlap = average_overlap + (100*area_overlap[i]);
+        }
+        average_overlap = average_overlap + (( (agent_count*static_matching.size())-area_breaks.size() )*100);
+        average_overlap = average_overlap/(agent_count*static_matching.size());
+////        cout<< "average area overlap is " << average_overlap << "%" <<endl;
+        cout<< average_overlap <<endl;
+    }
+}
+
+
