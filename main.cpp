@@ -38,7 +38,7 @@ int optimal_weight; // will contain optimal weight for initial solution, then al
 int original_weight; // initial optimal matching weight copied from optimal_weight after initial solution is found
 int discovered_weight; // if more optimal solution is discovered its weight is stored here
 double percent_error = .1;
-double algorithm_error = .2;
+double algorithm_error = 0;
 
 
 void print_util_mat(vector<vector<double>>,int,int); // easily prints matrix of doubles
@@ -504,8 +504,10 @@ void FindAreas(){
     vector<edge> area_breaks;
     vector<double> area_overlap;
     if(original_weight != discovered_weight){
-        algorithm_error = discovered_weight - original_weight;
-        algorithm_error = algorithm_error/original_weight;
+        if(algorithm_error != 0){
+            algorithm_error = discovered_weight - original_weight;
+            algorithm_error = algorithm_error/original_weight;
+        }
     }
 ////    cout << "assumed algorithm error is " << 100*algorithm_error << "%" <<endl;
     for(int i=0;i<interval_mat.size();i++){
