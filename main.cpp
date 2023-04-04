@@ -6,12 +6,17 @@
 #include <chrono>
 #include<sys/types.h>
 #include<unistd.h>
+#include <cmath>
 
 using namespace std;
 
 struct edge{
     int task;
     int agent;
+};
+struct coordinate{
+    double x;
+    double y;
 };
 
 vector<vector<double>> dynamic_weight_mat; // dynamic weight matrix used in OTMM
@@ -34,9 +39,9 @@ vector<vector<double>> interval_mat;
 int free_agents; // number of agents not yet allocated
 int task_count; // number of tasks. this changes when tasks are split into subtasks
 int agent_count; // number of agents. this stays constant
-int optimal_weight; // will contain optimal weight for initial solution, then all interval solutions
-int original_weight; // initial optimal matching weight copied from optimal_weight after initial solution is found
-int discovered_weight; // if more optimal solution is discovered its weight is stored here
+double optimal_weight; // will contain optimal weight for initial solution, then all interval solutions
+double original_weight; // initial optimal matching weight copied from optimal_weight after initial solution is found
+double discovered_weight; // if more optimal solution is discovered its weight is stored here
 double percent_error = .1;
 double algorithm_error = 0;
 
@@ -70,9 +75,9 @@ int main(int argc, char* argv[]){
 
     static_matching = dynamic_matching;
 
-    print_match_mat(dynamic_matching,task_count,agent_count);
+//    print_match_mat(dynamic_matching,task_count,agent_count);
 
-    cout<< "Optimal Weight: " << optimal_weight <<endl;
+    cout<< /*"Optimal Weight: " <<*/ optimal_weight <<endl;
 
     original_weight = optimal_weight;
 
@@ -84,23 +89,23 @@ int main(int argc, char* argv[]){
 
     auto finish2 = std::chrono::high_resolution_clock::now();
 
-    cout<< "-------------optimals------------"<<endl;
-    print_util_mat(optimals,agent_count,agent_count);
+//    cout<< "-------------optimals------------"<<endl;
+//    print_util_mat(optimals,agent_count,agent_count);
 
-    cout<< "------------error-----------"<<endl;
-    print_util_mat(error,agent_count,agent_count);
+//    cout<< "------------error-----------"<<endl;
+ //   print_util_mat(error,agent_count,agent_count);
 
     if(discovered_weight > original_weight){
-        cout<< "-------------------------------" <<endl;
-        cout<< "Higher weighted matching found" <<endl;
-        print_match_mat(discovered_matching,agent_count,agent_count);
-        cout<< "Weight: " << discovered_weight <<endl;
+ //       cout<< "-------------------------------" <<endl;
+ //       cout<< "Higher weighted matching found" <<endl;
+ //       print_match_mat(discovered_matching,agent_count,agent_count);
+ //       cout<< "Weight: " << discovered_weight <<endl;
     }
 
     PrintIntervals();
 
-    cout<<endl;
-    cout<< "----------------Range Checks-------------"<<endl;
+ //   cout<<endl;
+ //   cout<< "----------------Range Checks-------------"<<endl;
     FindAreas();
 
 
@@ -108,10 +113,10 @@ int main(int argc, char* argv[]){
     std::chrono::duration<double> elapsed1 = finish1 - start1;
     std::chrono::duration<double> elapsed2 = finish2 - start2;
 
-    cout<< "-------------time--------------" <<endl;
-    cout<< "Allocation Time: " << elapsed1.count() <<endl;
-    cout<< "Interval Time: " << elapsed2.count() <<endl;
-    cout<< "Total Time: " << elapsed1.count() + elapsed2.count() <<endl;
+ //   cout<< "-------------time--------------" <<endl;
+ //   cout<< "Allocation Time: " << elapsed1.count() <<endl;
+ //   cout<< "Interval Time: " << elapsed2.count() <<endl;
+ //   cout<< "Total Time: " << elapsed1.count() + elapsed2.count() <<endl;
 
 
     return 0;
@@ -138,13 +143,40 @@ void print_match_mat(vector<vector<int>> vec, int dem1, int dem2){
 void generate_system(){
     vector<double> temp;
     vector<int> temp_match;
-    int temp_task;
+
+    coordinate temp_local;
+    vector<coordinate> agent_locals;
+    vector<coordinate> task_locals;
+    double temp_distance;
+    double x_diffs;
+    double y_diffs;
+    double sums;
     pid_t pid = getpid();
+    default_random_engine generator;
+    generator.seed(pid);
+    normal_distribution<double> distribution(50.0,10.0);
+    for(int i=0;i<task_count;i++){
+        temp_local.x = distribution(generator);
+        temp_local.y = distribution(generator);
+        task_locals.push_back(temp_local);
+    }
+    for(int i=0;i<agent_count;i++){
+        temp_local.x = distribution(generator);
+        temp_local.y = distribution(generator);
+        agent_locals.push_back(temp_local);
+    }
+    int temp_task;
     // init random utilities
     srand(pid);
     for(int i=0;i<task_count;i++){
         for(int j=0;j<agent_count;j++){
-            temp.push_back((rand()%100)+1);
+            x_diffs = task_locals[i].x - agent_locals[j].x;
+            y_diffs = task_locals[i].y - agent_locals[j].y;
+            x_diffs = x_diffs*x_diffs;
+            y_diffs = y_diffs*y_diffs;
+            sums = x_diffs+y_diffs;
+            temp_distance = sqrt(sums);
+            temp.push_back(100 - temp_distance);
             temp_match.push_back(0);
         }
         dynamic_weight_mat.push_back(temp);
@@ -178,14 +210,14 @@ void OTMM(){
     int best_for_T = 0;
     vector<int> agent_best_matches;
     vector<int> task_best_matches;
-/*    cout<< "*********PHASE1************"<<endl;
+//    cout<< "*********PHASE1************"<<endl;
     // display what each task needs
-    cout<< "task needs" <<endl;
-    for(int i=0;i<task_count;i++){
-        cout<< task_need[i] << " ";
-    }
-    cout<<endl;
-*/   // finding best matches for agents
+//    cout<< "task needs" <<endl;
+//    for(int i=0;i<task_count;i++){
+//        cout<< task_need[i] << " ";
+//    }
+//    cout<<endl;
+   // finding best matches for agents
     for(int i=0;i<agent_count;i++){
         for(int j=0;j<task_count;j++){
             if(dynamic_weight_mat[j][i] > best_value){
@@ -208,17 +240,17 @@ void OTMM(){
         best_value = 0;
     }
     // displaying best matches
-/*    cout<<"best matches for agents"<<endl;
-    for(int i=0;i<agent_count;i++){
-        cout<< agent_best_matches[i] << " ";
-    }
-    cout<<endl;
-    cout<<"best matches for tasks"<<endl;
-    for(int i=0;i<task_count;i++){
-        cout<< task_best_matches[i] << " ";
-    }
-    cout<<endl;
-*/    // finding dominating edges
+//    cout<<"best matches for agents"<<endl;
+//    for(int i=0;i<agent_count;i++){
+//        cout<< agent_best_matches[i] << " ";
+//    }
+//    cout<<endl;
+//    cout<<"best matches for tasks"<<endl;
+//    for(int i=0;i<task_count;i++){
+//        cout<< task_best_matches[i] << " ";
+//    }
+//    cout<<endl;
+    // finding dominating edges
     for(int i=0;i<task_count;i++){
         for(int j=0;j<agent_count;j++){
             if(task_best_matches[i] == j && agent_best_matches[j] == i){
@@ -228,13 +260,13 @@ void OTMM(){
             }
         }
     }
-/*    // displaying initial dominating edges
-    cout<< "initial dominating edges" <<endl;
-    for(int i=0;i<dominating.size();i++){
-        cout << "(" << dominating[i].agent << "," << dominating[i].task << ")" << " ";
-    }
-    cout<<endl;
-*/    // allocating edges
+    // displaying initial dominating edges
+//    cout<< "initial dominating edges" <<endl;
+//    for(int i=0;i<dominating.size();i++){
+//        cout << "(" << dominating[i].agent << "," << dominating[i].task << ")" << " ";
+//    }
+//    cout<<endl;
+    // allocating edges
     for(int i=0;i<dominating.size();i++){
         if(task_have[dominating[i].task] != task_need[dominating[i].task]){
             dynamic_matching[dominating[i].task][dominating[i].agent] = 1;
@@ -246,13 +278,13 @@ void OTMM(){
         }
     }
     // display initial dynamic_matching
-/*    cout<< "initial dynamic_matching"<<endl;
-    print_match_mat(dynamic_matching,task_count,agent_count);
+//    cout<< "initial dynamic_matching"<<endl;
+//    print_match_mat(dynamic_matching,task_count,agent_count);
     // display utilities
-    cout<< "current utility matrix" <<endl;
-    print_util_mat(dynamic_weight_mat,task_count,agent_count);
-    cout<< "*********PHASE2************"<<endl;
-*/    while(dominating.size() != 0){
+//    cout<< "current utility matrix" <<endl;
+//    print_util_mat(dynamic_weight_mat,task_count,agent_count);
+//    cout<< "*********PHASE2************"<<endl;
+    while(dominating.size() != 0){
 //    cout << "-------------------------"<<endl;
         temp = dominating[dominating.size()-1];
         dominating.pop_back();
@@ -443,7 +475,7 @@ void MakeSquare(){
 //    cout << "**********Square System*************" <<endl;
 //    print_match_mat(dynamic_square_matching,agent_count,agent_count);
 //    cout<<endl;
-//    print_util_mat(dynamic_square_weight_mat,agent_count,agent_count);
+    print_util_mat(dynamic_square_weight_mat,agent_count,agent_count);
 }
 
 void PrintIntervals(){
@@ -481,21 +513,21 @@ void PrintIntervals(){
         }
     }
     vector<double> interval_temp;
-    cout<<"------Intervals-------"<<endl;
+//    cout<<"------Intervals-------"<<endl;
     for(int i=0;i<error_collapsed.size();i++){
         for(int j=0;j<agent_count;j++){
             if(static_matching[i][j] == 1){
-                cout << "[" << static_weight_mat[i][j] - error_collapsed[i][j] << ",oo)" << "  ";
+//                cout << "[" << static_weight_mat[i][j] - error_collapsed[i][j] << ",oo)" << "  ";
                 interval_temp.push_back(static_weight_mat[i][j] - error_collapsed[i][j]);
             }
             else{
-                cout << "(-oo," << error_collapsed[i][j] << "]" << "  ";
+//                cout << "(-oo," << error_collapsed[i][j] << "]" << "  ";
                 interval_temp.push_back(error_collapsed[i][j]);
             }
         }
         interval_mat.push_back(interval_temp);
         interval_temp.clear();
-        cout<<endl;
+//        cout<<endl;
     }
 }
 
@@ -509,7 +541,7 @@ void FindAreas(){
             algorithm_error = algorithm_error/original_weight;
         }
     }
-    cout << "assumed algorithm error is " << 100*algorithm_error << "%" <<endl;
+//    cout << "assumed algorithm error is " << 100*algorithm_error << "%" <<endl;
     for(int i=0;i<interval_mat.size();i++){
         for(int j=0;j<interval_mat[0].size();j++){
             current_edge.agent = j;
@@ -533,9 +565,9 @@ void FindAreas(){
     double overlaping_area;
     double average_overlap;
     if(area_breaks.size() == 0){
-        cout<< "All edges are withing range" <<endl;
-        cout<< "average area overlap is 100%" <<endl;
-        cout<<100<<endl;
+//        cout<< "All edges are withing range" <<endl;
+//        cout<< "average area overlap is 100%" <<endl;
+//        cout<<100<<endl;
     }
     else{
         for(int i=0;i<area_breaks.size();i++){
@@ -565,7 +597,7 @@ void FindAreas(){
             }
         }
         for(int i=0;i<area_breaks.size();i++){
-            cout << "agent " << area_breaks[i].agent << " and task " << area_breaks[i].task << " have range overlap by " << 100*area_overlap[i] << "%" <<endl;
+//            cout << "agent " << area_breaks[i].agent << " and task " << area_breaks[i].task << " have range overlap by " << 100*area_overlap[i] << "%" <<endl;
             average_overlap = average_overlap + (100*area_overlap[i]);
         }
         average_overlap = average_overlap + (( (agent_count*static_matching.size())-area_breaks.size() )*100);
