@@ -1,0 +1,55 @@
+# depslib dependency file v1.0
+1680895133 source:d:\mrta\gamblers-mrta\main.cpp
+	<iostream>
+	"graph.h"
+	"Probabilities.h"
+
+1680730072 source:d:\mrta\gamblers-mrta\gamblers-mrta.cpp
+
+1680729376 d:\mrta\gamblers-mrta\gamblers-mrta.h
+	<vector>
+
+1680885736 source:d:\mrta\gamblers-mrta\vertex.cpp
+	"vertex.h"
+	<random>
+	<sys/types.h>
+
+1680884065 d:\mrta\gamblers-mrta\vertex.h
+
+1680836362 source:d:\mrta\gamblers-mrta\agent.cpp
+	"agent.h"
+
+1680836362 d:\mrta\gamblers-mrta\agent.h
+	"vertex.h"
+
+1680840819 source:d:\mrta\gamblers-mrta\task.cpp
+	"task.h"
+
+1680836293 d:\mrta\gamblers-mrta\task.h
+	"vertex.h"
+
+1680895215 d:\mrta\gamblers-mrta\graph.h
+	"agent.h"
+	"task.h"
+	<vector>
+
+1680895206 source:d:\mrta\gamblers-mrta\graph.cpp
+	<iostream>
+	<random>
+	<sys/types.h>
+	<math.h>
+	"graph.h"
+
+1680829351 source:d:\mrta\gamblers-mrta\edgeid.cpp
+	"edgeID.h"
+
+1680829355 d:\mrta\gamblers-mrta\edgeid.h
+
+1680894472 source:d:\mrta\gamblers-mrta\probabilities.cpp
+	<iostream>
+	<math.h>
+	"probabilities.h"
+
+1680891427 d:\mrta\gamblers-mrta\probabilities.h
+	<vector>
+
