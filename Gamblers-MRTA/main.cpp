@@ -1,7 +1,9 @@
 #include<iostream>
-
 #include "graph.h"
 #include "Probabilities.h"
+#include "vertex.h"
+#include "task.h"
+#include "agent.h"
 
 using namespace std;
 
@@ -27,10 +29,10 @@ int main(int argc, char* argv[]){
 //    Initial_Solution.print_graph();
     set_intervals();
 //    probability_analysis.print_error();
-    std::cout<<std::endl;
+//    std::cout<<std::endl;
 //    probability_analysis.print_tolerance();
     Gamblers_system = Initial_System;
-    std::cout<<std::endl;
+//    std::cout<<std::endl;
     set_probabilities();
 //    Gamblers_system.print_graph();
     OTMM(Gamblers_system, 2);
@@ -82,15 +84,18 @@ int main(int argc, char* argv[]){
     }
     if(run_type == 0){
         Initial_Solution = G;
+        return(0);
     }
     else{
         if(run_type == 2){
             Gamblers_solution = G;
+            return(0);
         }
         else{
         return(G.get_matching_value());
         }
     }
+
 }
 
 
@@ -128,12 +133,16 @@ void set_probabilities(){
 }
 
 void compare_results(){
-    double initial_value = Initial_Solution.get_matching_value();
+    double initial_value = 0;
     double Gamblers_value = 0;
     for(int i=0;i<Gamblers_solution.get_task_count();i++){
         for(int j=0;j<Gamblers_solution.get_agent_count();j++){
             if(Gamblers_solution.get_edge_type(i, j) == 1){
-                Gamblers_value = Gamblers_value + Initial_System.get_edge_weight(i, j);
+                Gamblers_value = Gamblers_value + Initial_System.reveal_real_weight(i, j);
+
+            }
+            if(Initial_Solution.get_edge_type(i, j) == 1){
+                initial_value = initial_value+Initial_System.reveal_real_weight(i, j);
             }
         }
     }

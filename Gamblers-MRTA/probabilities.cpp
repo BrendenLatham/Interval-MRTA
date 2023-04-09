@@ -1,6 +1,6 @@
 #include<iostream>
 #include <math.h>
-#include "probabilities.h"
+#include "Probabilities.h"
 
 void probabilities::initialize(int agent_count, int task_count){
     this->task_count = task_count;
@@ -55,18 +55,18 @@ double probabilities::compute_probability(int t, int a, double weight){
     double z_score;
     if(Intervals.at(t).at(a).second == 1){
         if(weight > Intervals.at(t).at(a).first){
-            z_score = (weight-Intervals.at(t).at(a).first)/10;             // double check later
+            z_score = -1*(weight-Intervals.at(t).at(a).first)/10;             // double check later
         }
         else{
-            z_score = -1*(weight-Intervals.at(t).at(a).first)/10;
+            z_score = (weight-Intervals.at(t).at(a).first)/10;
         }
     }
     else{
         if(Intervals.at(t).at(a).first > weight){
-            z_score = (Intervals.at(t).at(a).first-weight)/10;
+            z_score = -1*(Intervals.at(t).at(a).first-weight)/10;
         }
         else{
-            z_score = -1*(weight-Intervals.at(t).at(a).first)/10;
+            z_score = (weight-Intervals.at(t).at(a).first)/10;
         }
     }
     return (0.5*std::erfc(-z_score * M_SQRT1_2));

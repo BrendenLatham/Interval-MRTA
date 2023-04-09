@@ -38,6 +38,8 @@ public:
     double get_edge_weight(int t, int a);
 
     void update_weight(int t, int a, double weight);
+
+    double reveal_real_weight(int t, int a);
 };
 
 #endif

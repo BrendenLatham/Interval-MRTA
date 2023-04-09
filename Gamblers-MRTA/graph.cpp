@@ -1,6 +1,7 @@
 #include <iostream>
 #include <random>
 #include<sys/types.h>
+#include <unistd.h>
 #include <math.h>
 #include "graph.h"
 
@@ -195,4 +196,16 @@ double graph::get_edge_weight(int t, int a){
 
 void graph::update_weight(int t, int a, double weight){
     Weights.at(t).at(a) = weight;
+}
+
+double graph::reveal_real_weight(int t, int a){
+    double ax = Agents.at(a).get_actual_x();
+    double ay = Agents.at(a).get_actual_y();
+    double tx = Tasks.at(t).get_actual_x();
+    double ty = Tasks.at(t).get_actual_y();
+    double x = ax - tx;
+    double y = ay = ty;
+    x = std::pow(x,2);
+    y = std::pow(y,2);
+    return(std::sqrt(x+y));
 }
