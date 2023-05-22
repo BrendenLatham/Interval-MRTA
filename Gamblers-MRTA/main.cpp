@@ -4,6 +4,8 @@
 #include "vertex.h"
 #include "task.h"
 #include "agent.h"
+#include <ctime>
+#include <chrono>
 
 using namespace std;
 
@@ -11,6 +13,7 @@ double OTMM(graph G, int run_type);
 void set_intervals();
 void set_probabilities();
 void compare_results();
+void output_test_matrix();
 
 graph Initial_System;
 graph Initial_Solution;
@@ -19,26 +22,40 @@ graph Gamblers_solution;
 probabilities probability_analysis;
 
 
+
 int main(int argc, char* argv[]){
     graph Graph;
     probability_analysis.initialize(atoi(argv[1]),atoi(argv[2]));
     Graph.randomize(atoi(argv[1]),atoi(argv[2]));
-//    Graph.print_graph();
+    Graph.print_graph();
     Initial_System = Graph;
+    auto start1 = std::chrono::high_resolution_clock::now();
+    auto start2 = std::chrono::high_resolution_clock::now();
     OTMM(Graph, 0);
-//    Initial_Solution.print_graph();
+    auto finish1 = std::chrono::high_resolution_clock::now();
+    Initial_Solution.print_graph();
     set_intervals();
-//    probability_analysis.print_error();
-//    std::cout<<std::endl;
-//    probability_analysis.print_tolerance();
+    probability_analysis.print_error();
+    std::cout<<std::endl;
+    probability_analysis.print_tolerance();
+    std::cout<<std::endl;
+    std::cout<<std::endl;
     Gamblers_system = Initial_System;
-//    std::cout<<std::endl;
+    std::cout<<std::endl;
     set_probabilities();
-//    Gamblers_system.print_graph();
+    Gamblers_system.print_graph();
     OTMM(Gamblers_system, 2);
-//    Gamblers_solution.print_graph();
+    auto finish2 = std::chrono::high_resolution_clock::now();
+    Gamblers_solution.print_graph();
     compare_results();
 
+//    output_test_matrix();
+
+
+    std::chrono::duration<double> elapsed1 = finish1 - start1;
+    std::chrono::duration<double> elapsed2 = finish2 - start2;
+
+ //   cout<<Initial_System.get_agent_count()*Initial_System.get_task_count()<<","<<elapsed1.count()<<","<<elapsed2.count()<<endl;
 
 
     return(0);
@@ -121,11 +138,11 @@ void set_probabilities(){
     for(int i=0;i<Initial_System.get_task_count();i++){
         for(int j=0;j<Initial_System.get_agent_count();j++){
             if(Initial_Solution.get_edge_type(i, j) == 0){
-                double new_weight = Gamblers_system.get_edge_weight(i, j)*(1-probability_analysis.compute_probability(i, j, Gamblers_system.get_edge_weight(i, j)));
+                double new_weight = (1-probability_analysis.compute_probability(i, j, Gamblers_system.get_edge_weight(i, j)));
                 Gamblers_system.update_weight(i, j, new_weight);
             }
             else{
-                double new_weight = Gamblers_system.get_edge_weight(i, j)*probability_analysis.compute_probability(i, j, Gamblers_system.get_edge_weight(i, j));
+                double new_weight = probability_analysis.compute_probability(i, j, Gamblers_system.get_edge_weight(i, j));
                 Gamblers_system.update_weight(i, j, new_weight);
             }
         }
@@ -135,10 +152,12 @@ void set_probabilities(){
 void compare_results(){
     double initial_value = 0;
     double Gamblers_value = 0;
+    double Gambler_estimate_value = 0;
     for(int i=0;i<Gamblers_solution.get_task_count();i++){
         for(int j=0;j<Gamblers_solution.get_agent_count();j++){
             if(Gamblers_solution.get_edge_type(i, j) == 1){
                 Gamblers_value = Gamblers_value + Initial_System.reveal_real_weight(i, j);
+                Gambler_estimate_value = Gambler_estimate_value + Initial_System.get_edge_weight(i, j);
 
             }
             if(Initial_Solution.get_edge_type(i, j) == 1){
@@ -159,5 +178,26 @@ void compare_results(){
         }
     }
     */
-    std::cout<<initial_value<<" "<<Gamblers_value<<std::endl;
+    for(int i=0;i<Gamblers_solution.get_task_count();i++){
+        for(int j=0;j<Gamblers_solution.get_agent_count();j++){
+            std::cout<<Initial_System.reveal_real_weight(i,j)<<" ";
+        }
+        std::cout<<std::endl;
+    }
+
+    //std::cout<<initial_value<<" "<<Gamblers_value<<std::endl;
+    std::cout<<Gamblers_value - initial_value<<std::endl;
+    //std::cout<<(Gamblers_value-initial_value)/initial_value;
+
+}
+
+void output_test_matrix(){
+    for(int i=0;i<Initial_System.get_task_count();i++){
+        for(int j=0;j<Initial_System.Tasks.at(i).get_needs();j++){
+            for(int k=0;k<Initial_System.get_agent_count();k++){
+                std::cout<<Initial_System.reveal_real_weight(i,k)<<" ";
+            }
+            std::cout<<std::endl;
+        }
+    }
 }

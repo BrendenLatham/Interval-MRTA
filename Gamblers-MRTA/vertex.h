@@ -3,14 +3,14 @@
 
 class vertex{
     double x,y;
-    double actual_x;
-    double actual_y;
+    double real_x;
+    double real_y;
 public:
-    vertex(double x, double y);
+    vertex(double x, double y, double real_x, double real_y);
     double get_x();
     double get_y();
-    double get_actual_x();
-    double get_actual_y();
+    double get_real_x();
+    double get_real_y();
 };
 
 #endif

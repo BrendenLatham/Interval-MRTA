@@ -26,4 +26,8 @@ void task::update_full(){
 }
 void task::init_needs(){
     needs = 1;
+    has = 0;
+}
+int task::get_has(){
+    return(has);
 }

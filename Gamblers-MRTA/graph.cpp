@@ -5,6 +5,11 @@
 #include <math.h>
 #include "graph.h"
 
+double local_stdv = 20;
+double real_stdv = 10;
+int env_size = 10*local_stdv;
+double local_mean = env_size/2;
+
 
 void graph::randomize(int agent_count, int task_count){
     this->agent_count = agent_count;
@@ -17,12 +22,18 @@ void graph::randomize(int agent_count, int task_count){
     srand(pid);
     std::default_random_engine generator;
     generator.seed(pid);
-    std::normal_distribution<double> distribution(50.0,10.0);
+    std::normal_distribution<double> distribution(local_mean,local_stdv);
     // random generator up and running
 
     // populate agents and tasks
     for(int i=0;i<task_count;i++){
-        task New_Task(distribution(generator),distribution(generator));
+        double x = /*rand()%env_size*/distribution(generator);
+        double y = /*rand()%env_size*/distribution(generator);
+        std::normal_distribution<double> x_distribution(x,real_stdv);
+        std::normal_distribution<double> y_distribution(y,real_stdv);
+        double real_x = x_distribution(generator);
+        double real_y = y_distribution(generator);
+        task New_Task(x,y,real_x,real_y);
         New_Task.set_unfull();
         New_Task.init_needs();
         Tasks.push_back(New_Task);
@@ -31,7 +42,13 @@ void graph::randomize(int agent_count, int task_count){
         Tasks.at(rand()%task_count).increase_needs();
     }
     for(int i=0;i<agent_count;i++){
-        agent New_Agent(distribution(generator),distribution(generator));
+        double x = /*rand()%env_size*/distribution(generator);
+        double y = /*rand()%env_size*/distribution(generator);
+        std::normal_distribution<double> x_distribution(x,real_stdv);
+        std::normal_distribution<double> y_distribution(y,real_stdv);
+        double real_x = x_distribution(generator);
+        double real_y = y_distribution(generator);
+        agent New_Agent(x,y,real_x,real_y);
         New_Agent.set_unallocated();
         Agents.push_back(New_Agent);
     // agents and tasks done populating
@@ -59,7 +76,7 @@ void graph::randomize(int agent_count, int task_count){
             x = std::pow(x,2);
             y = std::pow(y,2);
             cost = std::sqrt(x+y);
-            Weights.at(i).at(j) = 100 - cost;
+            Weights.at(i).at(j) = env_size - cost;
         }
     }
     // weight matrix calculated
@@ -199,13 +216,13 @@ void graph::update_weight(int t, int a, double weight){
 }
 
 double graph::reveal_real_weight(int t, int a){
-    double ax = Agents.at(a).get_actual_x();
-    double ay = Agents.at(a).get_actual_y();
-    double tx = Tasks.at(t).get_actual_x();
-    double ty = Tasks.at(t).get_actual_y();
+    double ax = Agents.at(a).get_real_x();
+    double ay = Agents.at(a).get_real_y();
+    double tx = Tasks.at(t).get_real_x();
+    double ty = Tasks.at(t).get_real_y();
     double x = ax - tx;
-    double y = ay = ty;
+    double y = ay - ty;
     x = std::pow(x,2);
     y = std::pow(y,2);
-    return(std::sqrt(x+y));
+    return(env_size - std::sqrt(x+y));
 }

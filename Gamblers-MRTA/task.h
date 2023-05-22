@@ -5,6 +5,7 @@
 class task: public vertex{
     bool full;
     int needs;
+    int has;
 public:
     using vertex::vertex;
     void set_unfull();
@@ -14,6 +15,7 @@ public:
     void decrease_needs();
     void update_full();
     void init_needs();
+    int get_has();
 };
 
 #endif //TASK
