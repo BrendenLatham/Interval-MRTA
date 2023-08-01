@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1684430059 source:d:\mrta\gamblers-mrta\main.cpp
+1688664964 source:d:\mrta\gamblers-mrta\main.cpp
 	<iostream>
 	"graph.h"
 	"Probabilities.h"
@@ -8,6 +8,7 @@
 	"agent.h"
 	<ctime>
 	<chrono>
+	<bits/stdc++.h>
 
 1680730072 source:d:\mrta\gamblers-mrta\gamblers-mrta.cpp
 
@@ -34,12 +35,12 @@
 1681078158 d:\mrta\gamblers-mrta\task.h
 	"vertex.h"
 
-1681081534 d:\mrta\gamblers-mrta\graph.h
+1687821219 d:\mrta\gamblers-mrta\graph.h
 	"agent.h"
 	"task.h"
 	<vector>
 
-1684430017 source:d:\mrta\gamblers-mrta\graph.cpp
+1688665175 source:d:\mrta\gamblers-mrta\graph.cpp
 	<iostream>
 	<random>
 	<sys/types.h>
@@ -52,7 +53,7 @@
 
 1680829355 d:\mrta\gamblers-mrta\edgeid.h
 
-1684431949 source:d:\mrta\gamblers-mrta\probabilities.cpp
+1688665175 source:d:\mrta\gamblers-mrta\probabilities.cpp
 	<iostream>
 	<math.h>
 	"Probabilities.h"

@@ -5,10 +5,12 @@
 #include <math.h>
 #include "graph.h"
 
-double local_stdv = 20;
-double real_stdv = 10;
-int env_size = 10*local_stdv;
+double local_stdv = 100;
+double real_stdv = 70;
+int env_size = 100;
 double local_mean = env_size/2;
+
+double val_const;
 
 
 void graph::randomize(int agent_count, int task_count){
@@ -27,12 +29,12 @@ void graph::randomize(int agent_count, int task_count){
 
     // populate agents and tasks
     for(int i=0;i<task_count;i++){
-        double x = /*rand()%env_size*/distribution(generator);
-        double y = /*rand()%env_size*/distribution(generator);
+        double x = rand()%env_size/*distribution(generator)*/;
+        double y = rand()%env_size/*distribution(generator)*/;
         std::normal_distribution<double> x_distribution(x,real_stdv);
         std::normal_distribution<double> y_distribution(y,real_stdv);
-        double real_x = x_distribution(generator);
-        double real_y = y_distribution(generator);
+        double real_x = /*x_distribution(generator)*/ x; //trying placing at exact vs estimated
+        double real_y = /*y_distribution(generator)*/ y;
         task New_Task(x,y,real_x,real_y);
         New_Task.set_unfull();
         New_Task.init_needs();
@@ -42,12 +44,12 @@ void graph::randomize(int agent_count, int task_count){
         Tasks.at(rand()%task_count).increase_needs();
     }
     for(int i=0;i<agent_count;i++){
-        double x = /*rand()%env_size*/distribution(generator);
-        double y = /*rand()%env_size*/distribution(generator);
-        std::normal_distribution<double> x_distribution(x,real_stdv);
-        std::normal_distribution<double> y_distribution(y,real_stdv);
-        double real_x = x_distribution(generator);
-        double real_y = y_distribution(generator);
+        double real_x = rand()%env_size/*distribution(generator)*/;
+        double real_y = rand()%env_size/*distribution(generator)*/;
+        std::normal_distribution<double> x_distribution(real_x,real_stdv);
+        std::normal_distribution<double> y_distribution(real_y,real_stdv);
+        double x = x_distribution(generator);
+        double y = y_distribution(generator);
         agent New_Agent(x,y,real_x,real_y);
         New_Agent.set_unallocated();
         Agents.push_back(New_Agent);
@@ -67,6 +69,8 @@ void graph::randomize(int agent_count, int task_count){
     }
     // matrices initialized
 
+    find_max_cost();
+
     // calculating weight matrix
     for(int i=0;i<task_count;i++){
         for(int j=0;j<agent_count;j++){
@@ -76,10 +80,28 @@ void graph::randomize(int agent_count, int task_count){
             x = std::pow(x,2);
             y = std::pow(y,2);
             cost = std::sqrt(x+y);
-            Weights.at(i).at(j) = env_size - cost;
+            Weights.at(i).at(j) = val_const - cost;
         }
     }
     // weight matrix calculated
+}
+
+void graph::find_max_cost(){
+    double max_cost = 0;
+    for(int i=0;i<task_count;i++){
+        for(int j=0;j<agent_count;j++){
+            double cost;
+            double x = Tasks.at(i).get_x() - Agents.at(j).get_x();
+            double y = Tasks.at(i).get_y() - Agents.at(j).get_y();
+            x = std::pow(x,2);
+            y = std::pow(y,2);
+            cost = std::sqrt(x+y);
+            if(cost > max_cost){
+                max_cost = cost;
+            }
+        }
+    }
+    val_const = max_cost+1;
 }
 
 void graph::print_graph(){
@@ -224,5 +246,11 @@ double graph::reveal_real_weight(int t, int a){
     double y = ay - ty;
     x = std::pow(x,2);
     y = std::pow(y,2);
-    return(env_size - std::sqrt(x+y));
+    return(val_const - std::sqrt(x+y));
+}
+
+void graph::localize(int a){
+    for(int j=0;j<task_count;j++){
+        Weights.at(j).at(a) = reveal_real_weight(j,a);
+    }
 }

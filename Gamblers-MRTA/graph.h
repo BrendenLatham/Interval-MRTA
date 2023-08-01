@@ -40,6 +40,10 @@ public:
     void update_weight(int t, int a, double weight);
 
     double reveal_real_weight(int t, int a);
+
+    void localize(int a);
+
+    void find_max_cost();
 };
 
 #endif

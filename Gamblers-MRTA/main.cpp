@@ -6,6 +6,7 @@
 #include "agent.h"
 #include <ctime>
 #include <chrono>
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -14,48 +15,85 @@ void set_intervals();
 void set_probabilities();
 void compare_results();
 void output_test_matrix();
+void localize_0_agents();
+void localize_10_agents();
+void localize_20_agents();
+void localize_30_agents();
+void localize_all_agents();
+bool comparePair(pair<int,double> p1, pair<int,double> p2);
 
 graph Initial_System;
 graph Initial_Solution;
 graph Gamblers_system;
 graph Gamblers_solution;
 probabilities probability_analysis;
-
+double resource;
 
 
 int main(int argc, char* argv[]){
     graph Graph;
-    probability_analysis.initialize(atoi(argv[1]),atoi(argv[2]));
-    Graph.randomize(atoi(argv[1]),atoi(argv[2]));
+    probability_analysis.initialize(atoi(argv[1]),round(atoi(argv[1])*atoi(argv[2])/100));
+    Graph.randomize(atoi(argv[1]),round(atoi(argv[1])*atoi(argv[2])/100));
+    resource = round(atoi(argv[1])*atof(argv[3])/100);
+    std::cout<<"-------------INITIAL SYSTEM----------------"<<std::endl;
     Graph.print_graph();
+    std::cout<<"-------------------------------------------"<<std::endl;
     Initial_System = Graph;
     auto start1 = std::chrono::high_resolution_clock::now();
     auto start2 = std::chrono::high_resolution_clock::now();
     OTMM(Graph, 0);
+    std::cout<<Initial_Solution.get_matching_value()<<" ";
     auto finish1 = std::chrono::high_resolution_clock::now();
+    std::cout<<"-------------INITIAL SOLUTION----------------"<<std::endl;
     Initial_Solution.print_graph();
+    std::cout<<"---------------------------------------------"<<std::endl;
     set_intervals();
+    std::cout<<"-------------ALLOWABLE ERRORS----------------"<<std::endl;
     probability_analysis.print_error();
-    std::cout<<std::endl;
+    std::cout<<"---------------------------------------------"<<std::endl;
+    std::cout<<"-------------TOLERENCE INTERVALS----------------"<<std::endl;
     probability_analysis.print_tolerance();
-    std::cout<<std::endl;
-    std::cout<<std::endl;
+    std::cout<<"------------------------------------------------"<<std::endl;
     Gamblers_system = Initial_System;
-    std::cout<<std::endl;
     set_probabilities();
+    std::cout<<"-------------PROBABILISTIC SYSTEM----------------"<<std::endl;
     Gamblers_system.print_graph();
-    OTMM(Gamblers_system, 2);
-    auto finish2 = std::chrono::high_resolution_clock::now();
-    Gamblers_solution.print_graph();
+    std::cout<<"-------------------------------------------------"<<std::endl;
+
+    Gamblers_solution = Initial_System;
+    localize_0_agents();
+    OTMM(Gamblers_solution, 2);
     compare_results();
 
-//    output_test_matrix();
+//    Gamblers_solution = Initial_System;
+//    localize_10_agents();
+ //   OTMM(Gamblers_solution, 2);
+    auto finish2 = std::chrono::high_resolution_clock::now();
+ //   compare_results();
+
+//    Gamblers_solution = Initial_System;
+//    localize_20_agents();
+//    OTMM(Gamblers_solution, 2);
+//    compare_results();
+
+    Gamblers_solution = Initial_System;
+    localize_30_agents();
+    OTMM(Gamblers_solution, 2);
+    compare_results();
+
+    Gamblers_solution = Initial_System;
+    localize_all_agents();
+//    Gamblers_solution.print_graph();
+    OTMM(Gamblers_solution, 2);
+//    compare_results();
+    std::cout<<std::endl;
+    output_test_matrix();
 
 
     std::chrono::duration<double> elapsed1 = finish1 - start1;
     std::chrono::duration<double> elapsed2 = finish2 - start2;
 
- //   cout<<Initial_System.get_agent_count()*Initial_System.get_task_count()<<","<<elapsed1.count()<<","<<elapsed2.count()<<endl;
+//    cout<<Initial_System.get_agent_count()<<","<<elapsed1.count()<<","<<elapsed2.count()<<endl;
 
 
     return(0);
@@ -142,12 +180,14 @@ void set_probabilities(){
                 Gamblers_system.update_weight(i, j, new_weight);
             }
             else{
-                double new_weight = probability_analysis.compute_probability(i, j, Gamblers_system.get_edge_weight(i, j));
+                double new_weight = (1-probability_analysis.compute_probability(i, j, Gamblers_system.get_edge_weight(i, j)));
                 Gamblers_system.update_weight(i, j, new_weight);
             }
         }
     }
 }
+
+
 
 void compare_results(){
     double initial_value = 0;
@@ -178,15 +218,17 @@ void compare_results(){
         }
     }
     */
+    /*
     for(int i=0;i<Gamblers_solution.get_task_count();i++){
         for(int j=0;j<Gamblers_solution.get_agent_count();j++){
             std::cout<<Initial_System.reveal_real_weight(i,j)<<" ";
         }
         std::cout<<std::endl;
     }
+    */
 
-    //std::cout<<initial_value<<" "<<Gamblers_value<<std::endl;
-    std::cout<<Gamblers_value - initial_value<<std::endl;
+    std::cout/*<<initial_value<<" "*/<<Gamblers_value<<" ";
+//    std::cout<<Gamblers_value - initial_value<<std::endl;
     //std::cout<<(Gamblers_value-initial_value)/initial_value;
 
 }
@@ -199,5 +241,133 @@ void output_test_matrix(){
             }
             std::cout<<std::endl;
         }
+    }
+}
+
+bool comparePair(pair<int,double> p1, pair<int,double> p2){
+    return(p1.second > p2.second); // > to sort non-increasing
+}
+
+void localize_0_agents(){
+    std::vector<std::pair<int,double>> crits;
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        pair<int,double> temp_pair;
+        temp_pair.first = i;
+        temp_pair.second = 0;
+        crits.push_back(temp_pair);
+    }
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        for(int j=0;j<Initial_System.get_task_count();j++){
+            crits.at(i).second = crits.at(i).second+Gamblers_system.get_edge_weight(j,i);
+        }
+    }
+    sort(crits.begin(), crits.end(), comparePair); //comment out to localize agents randomly
+    /*
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        std::cout<<"Agent "<<crits.at(i).first<<" : "<<crits.at(i).second<<std::endl;
+    }
+    */
+
+    for(int i=0;i<0;i++){
+        Gamblers_solution.localize(crits.at(i).first);
+    }
+}
+
+void localize_10_agents(){
+    std::vector<std::pair<int,double>> crits;
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        pair<int,double> temp_pair;
+        temp_pair.first = i;
+        temp_pair.second = 0;
+        crits.push_back(temp_pair);
+    }
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        for(int j=0;j<Initial_System.get_task_count();j++){
+            crits.at(i).second = crits.at(i).second+Gamblers_system.get_edge_weight(j,i);
+        }
+    }
+    sort(crits.begin(), crits.end(), comparePair); //comment out to localize agents randomly
+    /*
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        std::cout<<"Agent "<<crits.at(i).first<<" : "<<crits.at(i).second<<std::endl;
+    }
+    */
+
+    for(int i=0;i<Initial_System.get_agent_count()*.1;i++){
+        Gamblers_solution.localize(crits.at(i).first);
+    }
+}
+
+void localize_20_agents(){
+    std::vector<std::pair<int,double>> crits;
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        pair<int,double> temp_pair;
+        temp_pair.first = i;
+        temp_pair.second = 0;
+        crits.push_back(temp_pair);
+    }
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        for(int j=0;j<Initial_System.get_task_count();j++){
+            crits.at(i).second = crits.at(i).second+Gamblers_system.get_edge_weight(j,i);
+        }
+    }
+    sort(crits.begin(), crits.end(), comparePair); //comment out to localize agents randomly
+    /*
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        std::cout<<"Agent "<<crits.at(i).first<<" : "<<crits.at(i).second<<std::endl;
+    }
+    */
+
+    for(int i=0;i<Initial_System.get_agent_count()*.2;i++){
+        Gamblers_solution.localize(crits.at(i).first);
+    }
+}
+
+void localize_30_agents(){
+    std::vector<std::pair<int,double>> crits;
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        pair<int,double> temp_pair;
+        temp_pair.first = i;
+        temp_pair.second = 0;
+        crits.push_back(temp_pair);
+    }
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        for(int j=0;j<Initial_System.get_task_count();j++){
+            crits.at(i).second = crits.at(i).second+Gamblers_system.get_edge_weight(j,i);
+        }
+    }
+    sort(crits.begin(), crits.end(), comparePair); //comment out to localize agents randomly
+
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        std::cout<<"Agent "<<crits.at(i).first<<" : "<<crits.at(i).second<<std::endl;
+    }
+
+
+    for(int i=0;i<Initial_System.get_agent_count()*.4;i++){
+        Gamblers_solution.localize(crits.at(i).first);
+    }
+}
+
+
+void localize_all_agents(){
+    std::vector<std::pair<int,double>> crits;
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        pair<int,double> temp_pair;
+        temp_pair.first = i;
+        temp_pair.second = 0;
+        crits.push_back(temp_pair);
+    }
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        for(int j=0;j<Initial_System.get_task_count();j++){
+            crits.at(i).second = crits.at(i).second+Gamblers_system.get_edge_weight(j,i);
+        }
+    }
+    /*
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        std::cout<<"Agent "<<crits.at(i).first<<" : "<<crits.at(i).second<<std::endl;
+    }
+    */
+    for(int i=0;i<Initial_System.get_agent_count();i++){
+        Gamblers_solution.localize(crits.at(i).first);
     }
 }
