@@ -1,0 +1,21 @@
+# depslib dependency file v1.0
+1692727746 source:d:\parallel_mrta\parallel_mrta\agent.cpp
+	"agent.h"
+
+1692727746 d:\parallel_mrta\parallel_mrta\agent.h
+	"vertex.h"
+
+1692727745 d:\parallel_mrta\parallel_mrta\vertex.h
+
+1692728686 source:d:\parallel_mrta\parallel_mrta\task.cpp
+	"task.h"
+
+1692728685 d:\parallel_mrta\parallel_mrta\task.h
+	"vertex.h"
+
+1692727746 source:d:\parallel_mrta\parallel_mrta\vertex.cpp
+	"vertex.h"
+	<random>
+	<sys/types.h>
+	<unistd.h>
+
