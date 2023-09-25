@@ -13,10 +13,14 @@
 #include <unistd.h>
 #include <math.h>
 
+using namespace std;
+
+bool comparePair(pair<int,double> p1, pair<int,double> p2);
+
 double est_stdv = 30;
 int env_size = 100;
+int ntasks = 100;
 
-using namespace std;
 
 int main(int argc, char* argv[]){
     int rank,size,message_int;
@@ -28,6 +32,15 @@ int main(int argc, char* argv[]){
 
 	if(rank == 0){
         graph Graph;
+        vector<int> resource;
+        vector<double> results;
+        auto start1 = std::chrono::high_resolution_clock::now();
+        resource.push_back(0);
+        resource.push_back(std::round(.1*(size-1)));
+        resource.push_back(std::round(.2*(size-1)));
+        resource.push_back(std::round(.3*(size-1)));
+        resource.push_back(size-1);
+
         for(int i=1;i<size;i++){
             MPI_Recv(&message_double,1,MPI_DOUBLE,i,100+i,MPI_COMM_WORLD,&status);
             double real_x = message_double;
@@ -41,9 +54,9 @@ int main(int argc, char* argv[]){
             Temp.set_unallocated();
             Graph.Agents.push_back(Temp);
         }
-        Graph.initialize_system(3,env_size);
+        Graph.initialize_system(ntasks,env_size);
         graph initial_system = Graph;
-        initial_system.print_graph();
+        //initial_system.print_graph();
 
 
         while(Graph.is_fully_matched() == false){
@@ -77,7 +90,7 @@ int main(int argc, char* argv[]){
             }
         }
         cout<<endl;
-        Graph.print_graph();
+        //Graph.print_graph();
 
         vector<int> temp_needs;
         vector<vector<double>> temp_weights;
@@ -115,6 +128,76 @@ int main(int argc, char* argv[]){
         for(int i=1;i<size;i++){
             MPI_Send(&initial_value,1,MPI_DOUBLE,i,2100+i,MPI_COMM_WORLD);
         }
+        vector<std::pair<int,double>> relative_crits;
+        for(int i=1;i<size;i++){
+            MPI_Recv(&message_double,1,MPI_DOUBLE,i,2300+i,MPI_COMM_WORLD,&status);
+            std::pair<int,double> temp;
+            temp.first = i;
+            temp.second = message_double;
+            relative_crits.push_back(temp);
+        }
+
+        sort(relative_crits.begin(), relative_crits.end(), comparePair);
+
+        auto finish1 = std::chrono::high_resolution_clock::now();
+
+        for(int k=0;k<resource.size();k++){
+            graph localized = initial_system;
+            for(int i=0;i<resource.at(k);i++){
+                localized.localize(relative_crits.at(i).first-1);
+            }
+            while(localized.is_fully_matched() == false){
+                for(int i=0;i<localized.get_task_count();i++){
+                    if(localized.Tasks.at(i).is_full() == false){
+                        int best_a = localized.tasks_best_agent(i);
+                        if(localized.agents_best_task(best_a) == i && localized.Agents.at(best_a).is_allocated() == false){
+                            localized.set_matched(i, best_a);
+                        }
+                    }
+                }
+
+                while(localized.dominating.size() != 0){
+                    if(localized.Tasks.at(0).is_full() == false){
+                        int best_a = localized.tasks_best_agent(0);
+                        if(localized.agents_best_task(best_a) == 0 && localized.Agents.at(best_a).is_allocated() == false){
+                            localized.set_matched(localized.dominating.at(0).first, best_a);
+                            std::pair<int,int> dom;
+                            dom.first = localized.dominating.at(0).first;
+                            dom.second = best_a;
+                            localized.dominating.push_back(dom);
+                            localized.dominating.erase(localized.dominating.begin());
+                        }
+                        else{
+                            localized.dominating.erase(localized.dominating.begin());
+                        }
+                    }
+                    else{
+                        localized.dominating.erase(localized.dominating.begin());
+                    }
+                }
+            }
+            double value = 0;
+            for(int i=0;i<localized.get_task_count();i++){
+                for(int j=0;j<localized.get_agent_count();j++){
+                    if(localized.get_edge_type(i,j) == 1){
+                        value = value + localized.reveal_real_weight(i,j);
+                    }
+                    else{
+                        value = value;
+                    }
+                }
+            }
+            results.push_back(value);
+        }
+        /*
+        cout<<endl;
+        for(int i=0;i<results.size();i++){
+            cout<<results.at(i)<<" ";
+        }
+        cout<<endl;
+        */
+         std::chrono::duration<double> elapsed1 = finish1 - start1;
+         cout<<elapsed1.count()<<endl;
 
 	}
     else{
@@ -139,11 +222,10 @@ int main(int argc, char* argv[]){
             Temp.set_unallocated();
             Graph.Agents.push_back(Temp);
         }
-        Graph.initialize_partial_system(3,env_size);
+        Graph.initialize_partial_system(ntasks,env_size);
 
         for(int i=0;i<Graph.get_task_count();i++){
             MPI_Recv(&message_int,1,MPI_INT,0,((i+1)*1000)+rank,MPI_COMM_WORLD,&status); //needs sent from 0
-            cout<<message_int<<endl;
             for(int j=1;j<message_int;j++){
                 Graph.Tasks.at(i).increase_needs();
             }
@@ -236,9 +318,13 @@ int main(int argc, char* argv[]){
         for(int i=0;i<initial_system.get_task_count();i++){
             relative_crit = relative_crit+agent_probabilities.at(i);
         }
-        cout<<"process "<<rank<<" crit "<<relative_crit<<endl;
+        MPI_Send(&relative_crit,1,MPI_DOUBLE,0,2300+rank,MPI_COMM_WORLD);
     }
 
 	MPI_Finalize();
     return(0);
+}
+
+bool comparePair(std::pair<int,double> p1, std::pair<int,double> p2){
+    return(p1.second > p2.second); // > to sort non-increasing
 }

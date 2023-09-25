@@ -14,6 +14,7 @@ void graph::initialize_system(int task_count, int env_size){
     this->task_count = task_count;
     agent_count = Agents.size();
     free_agents = agent_count;
+    update_fully_matched();
     Matching_Value = 0;
     this->env_size = env_size;
     pid_t pid = getpid();
@@ -60,6 +61,7 @@ void graph::initialize_partial_system(int task_count, int env_size){
     this->task_count = task_count;
     agent_count = Agents.size();
     free_agents = agent_count;
+    update_fully_matched();
     Matching_Value = 0;
     this->env_size = env_size;
     for(int i=0;i<task_count;i++){
